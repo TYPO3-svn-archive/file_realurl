@@ -1,0 +1,32 @@
+# Meaningful temp file prefix is necessary to get good looking image names
+config.meaningfulTempFilePrefix = 32
+
+# File RealURL settings
+tx_filerealurl {
+
+	enable = 1
+
+	files {
+		10 {
+			match = /(?:href|src)="([^"]*(?:typo3temp|uploads|fileadmin)[^"]+\.(?:gif|jpe?g|png))"/i
+			matchGroup = 1
+			path = TEXT
+			path {
+				typolink {
+					parameter.data = TSFE:id
+					returnLast = url
+				}
+				# Uncomment two lines below if you use .htm as a suffix, change 4 to 5 if you use .html as suffix
+				#substring = 0, -4
+				#wrap = |/
+				append = TEXT
+				append.current = 1
+			}
+			# Exclude some paths. Example: exclude = /clear\.gif$/
+			exclude =
+		}
+
+		20 < .10
+		20.match = /href="([^"]+\.(?:doc|xls|pdf))"/i
+	}
+}
