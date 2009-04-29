@@ -69,7 +69,33 @@ class tx_filerealurl_fehook {
 			'', '', 1);
 		if (is_array($row)) {
 			// Send it
-			readfile(PATH_site . $row['file_path']);
+			$filePath = PATH_site . $row['file_path'];
+			if (!file_exists($filePath)) {
+				header('HTTP/1.1 404 Not found');
+			}
+			else {
+				$mtime = filemtime($filePath);
+				$size = filesize($filePath);
+				$eTag = sprintf('%x-%x', $mtime, $size);
+				$lastModified = date('r', $mtime);
+				$sendFile = (!isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ||
+					$mtime > strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) ||
+					(isset($_SERVER['HTTP_IF_NONE_MATCH']) &&
+						$_SERVER['HTTP_IF_NONE_MATCH'] != $eTag));
+				if (!$sendFile) {
+					header('HTTP/1.1 304 Not Modified');
+					header('Last-modified: ' . $lastModified);
+					header('E-tag: "' . $eTag . '"');
+					header('Content-type: ' . $this->getContentType($filePath));
+				}
+				else {
+					header('Last-modified: ' . $lastModified);
+					header('E-tag: "' . $eTag . '"');
+					header('Content-length: ' . $size);
+					header('Content-type: ' . $this->getContentType($filePath));
+					readfile($filePath);
+				}
+			}
 			exit;
 		}
 	}
@@ -188,6 +214,32 @@ class tx_filerealurl_fehook {
 	protected function getPathOnly($url) {
 		$parts = @parse_url($url);
 		return (is_array($parts) && $parts['path'] ? substr($parts['path'], 1) : $url);
+	}
+
+	/**
+	 * Determines content type of the file
+	 *
+	 * @param	string	$filePath	File path
+	 * @return	string	Content type
+	 */
+	protected function getContentType($filePath) {
+		$result = '';
+		if (is_callable('finfo_file')) {
+			$finfo = finfo_open(FILEINFO_MIME);
+			$result = finfo_file($finfo, basename($filePath));
+			finfo_close($finfo);
+		}
+		elseif (is_callable('mime_content_type')) {
+			$result = mime_content_type(basename($filePath));
+		}
+		elseif (($im = @getimagesize($filePath))) {
+			$result = $im['mime'];
+		}
+		else {
+			$fileParts = pathinfo($filePath);
+			$result = 'application/' . $fileParts['extension'];
+		}
+		return $result;
 	}
 }
 
