@@ -18,7 +18,7 @@ $EM_CONF[$_EXTKEY] = array(
 	'author_email' => 'dmitry.dulepov@gmail.com',
 	'shy' => '',
 	'dependencies' => 'realurl',
-	'conflicts' => '',
+	'conflicts' => 'fl_realurl_image',
 	'priority' => '',
 	'module' => '',
 	'state' => 'beta',
@@ -35,6 +35,7 @@ $EM_CONF[$_EXTKEY] = array(
 			'realurl' => '',
 		),
 		'conflicts' => array(
+			'fl_realurl_image' => '',
 		),
 		'suggests' => array(
 		),
