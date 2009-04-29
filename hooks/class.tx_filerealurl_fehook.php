@@ -103,6 +103,16 @@ class tx_filerealurl_fehook {
 	/**
 	 * Hooks to the TSFE to replace paths to speaking paths.
 	 *
+	 * This hook is called three times for pages:
+	 * - all before cache
+	 * - cached-only
+	 * - all after cache & _INT object processing
+	 * If the page is not cached, the hook will do first pass in the 'all before
+	 * cache' stage, otherwise it will skip to 'cached-only'. This prevents it
+	 * from executing on cached pages. If  there are _INT objects on the page,
+	 * the hook will run for the 'output' phase and replace all paths in the
+	 * non-cached objects.
+	 *
 	 * @param	array	$params	Parameters
 	 * @param	tslib_fe	$pObj	Calling object
 	 * @return	void
