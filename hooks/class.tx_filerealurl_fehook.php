@@ -38,13 +38,23 @@
  */
 class tx_filerealurl_fehook {
 
+	/**
+	 * Indicates if the extension was executed already
+	 *
+	 * @var	boolean
+	 */
 	protected	$executed = false;
 
-	/** @var tslib_cObj */
+	/**
+	 * Content object for path creation
+	 *
+	 * @var tslib_cObj
+	 */
 	protected	$cObj;
 
 	/**
-	 * Converts speaking paths to real paths and outputs the file if found.
+	 * Hooks to TSFE and converts speaking paths to real paths. Outputs the file
+	 * if found.
 	 *
 	 * @return	void
 	 */
@@ -65,7 +75,7 @@ class tx_filerealurl_fehook {
 	}
 
 	/**
-	 * Hooks to TSFE to replace paths to speaking paths.
+	 * Hooks to the TSFE to replace paths to speaking paths.
 	 *
 	 * @param	array	$params	Parameters
 	 * @param	tslib_fe	$pObj	Calling object
@@ -169,6 +179,12 @@ class tx_filerealurl_fehook {
 		return $newPath;
 	}
 
+	/**
+	 * Parses URL and returns only the path from it
+	 *
+	 * @param	string	$url	URL to parse
+	 * @return	string	Path
+	 */
 	protected function getPathOnly($url) {
 		$parts = @parse_url($url);
 		return (is_array($parts) && $parts['path'] ? substr($parts['path'], 1) : $url);
