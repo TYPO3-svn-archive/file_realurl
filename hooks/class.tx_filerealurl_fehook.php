@@ -113,30 +113,26 @@ class tx_filerealurl_fehook {
 		for ($i = count($matches[$group]) - 1; $i >= 0; $i--) {
 			$currentPath = $matches[$group][$i][0];
 			if (!$config['exclude'] || !preg_match($config['exclude'], $currentPath)) {
-				// Create and replace a path
 
-				$currentPathCopy = $this->getPathOnly($currentPath);
-				$fileHash = crc32($currentPathCopy);
-				list($info) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('realurl_path',
-					'tx_filerealurl_cache', 'file_path_hash=' . $fileHash .
-					' AND file_path=' .
-					$GLOBALS['TYPO3_DB']->fullQuoteStr($currentPathCopy, 'tx_filerealurl_cache'));
-				if (is_array($info)) {
-					$newPath = $info['realurl_path'];
-				}
-				else {
-					$newPath = $this->createNewPath($currentPath, $config);
-					$newPathCopy = $this->getPathOnly($newPath);
+				// Create a path
+				$newPath = $this->createNewPath($currentPath, $config);
 
-					// Add to cache
+				// Add to cache if necessary
+				$newPathCopy = $this->getPathOnly($newPath);
+				$newPathHash = crc32($newPathCopy);
+				list($info) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(*) AS t',
+					'tx_filerealurl_cache', 'realurl_path_hash=' . $newPathHash .
+					' AND realurl_path=' .
+					$GLOBALS['TYPO3_DB']->fullQuoteStr($newPathCopy, 'tx_filerealurl_cache'));
+				if ($info['t'] == 0) {
 					$fields = array(
-						'file_path_hash' => $fileHash,
-						'file_path' => $currentPathCopy,
-						'realurl_path_hash' => crc32($newPathCopy),
+						'file_path' => $this->getPathOnly($currentPath),
+						'realurl_path_hash' => $newPathHash,
 						'realurl_path' => $newPathCopy
 					);
 					$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_filerealurl_cache', $fields);
 				}
+
 				// Update the content
 				$content = substr($content, 0, $matches[$group][$i][1]) .
 					t3lib_div::locationHeaderUrl($newPath) .
@@ -164,8 +160,10 @@ class tx_filerealurl_fehook {
 		}
 		else {
 			// Need to hash this one
-			$this->cObj->setCurrentVal(sprintf('%s-%x.%s', $fileParts['filename'],
-				crc32($currentPath), $fileParts['extension']));
+			$replacementChar = ($this->config['config']['simulateStaticDocuments_replacementChar'] ?
+				$this->config['config']['simulateStaticDocuments_replacementChar'] : '_');
+			$this->cObj->setCurrentVal(sprintf('%s%s%x.%s', $fileParts['filename'],
+				$replacementChar, crc32($currentPath), $fileParts['extension']));
 		}
 		$newPath = $this->cObj->cObjGetSingle($config['path'], $config['path.']);
 		return $newPath;
