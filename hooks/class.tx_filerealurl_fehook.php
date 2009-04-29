@@ -69,7 +69,7 @@ class tx_filerealurl_fehook {
 			'', '', 1);
 		if (is_array($row)) {
 			// Send it
-			$filePath = PATH_site . $row['file_path'];
+			$filePath = PATH_site . rawurldecode($row['file_path']);
 			if (!file_exists($filePath)) {
 				header('HTTP/1.1 404 Not found');
 			}
@@ -112,7 +112,7 @@ class tx_filerealurl_fehook {
 				is_array($pObj->tmpl->setup['tx_filerealurl.']) &&
 				$pObj->tmpl->setup['tx_filerealurl.']['enable']) {
 			$this->doConvertFilePaths($pObj);
-			$this->executed = true;
+			$this->executed = !$pObj->isINTincScript();
 		}
 	}
 

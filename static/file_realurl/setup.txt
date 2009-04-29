@@ -1,6 +1,9 @@
 # Meaningful temp file prefix is necessary to get good looking image names
 config.meaningfulTempFilePrefix = 32
 
+# Include RealURL helper hook
+includeLibs.tx_filerealurl_typolinkhook = EXT:file_realurl/hooks/class.tx_filerealurl_typolinkhook.php
+
 # File RealURL settings
 tx_filerealurl {
 
@@ -15,10 +18,8 @@ tx_filerealurl {
 				typolink {
 					parameter.data = TSFE:id
 					returnLast = url
+					userFunc = tx_filerealurl_typolinkhook->removeHtmlSuffix
 				}
-				# Uncomment two lines below if you use .htm as a suffix, change 4 to 5 if you use .html as suffix
-				#substring = 0, -4
-				#wrap = |/
 				append = TEXT
 				append.current = 1
 			}
