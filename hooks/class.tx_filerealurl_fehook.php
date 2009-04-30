@@ -167,23 +167,28 @@ class tx_filerealurl_fehook {
 			$currentPath = $matches[$group][$i][0];
 			if (!$config['exclude'] || !preg_match($config['exclude'], $currentPath)) {
 
-				// Create a path
-				$newPath = $this->createNewPath($currentPath, $config);
+				$currentPathCopy = $this->getPathOnly($currentPath);
+				if (!($newPath = $this->getFromCache($currentPathCopy))) {
+					// Create a path
+					$newPath = $this->createNewPath($currentPath, $config);
 
-				// Add to cache if necessary
-				$newPathCopy = $this->getPathOnly($newPath);
-				$newPathHash = crc32($newPathCopy);
-				list($info) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(*) AS t',
-					'tx_filerealurl_cache', 'realurl_path_hash=' . $newPathHash .
-					' AND realurl_path=' .
-					$GLOBALS['TYPO3_DB']->fullQuoteStr($newPathCopy, 'tx_filerealurl_cache'));
-				if ($info['t'] == 0) {
-					$fields = array(
-						'file_path' => $this->getPathOnly($currentPath),
-						'realurl_path_hash' => $newPathHash,
-						'realurl_path' => $newPathCopy
-					);
-					$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_filerealurl_cache', $fields);
+					// Add to cache if necessary
+					$newPathCopy = $this->getPathOnly($newPath);
+					$newPathHash = crc32($newPathCopy);
+					list($info) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(*) AS t',
+						'tx_filerealurl_cache', 'realurl_path_hash=' . $newPathHash .
+						' AND realurl_path=' .
+						$GLOBALS['TYPO3_DB']->fullQuoteStr($newPathCopy, 'tx_filerealurl_cache'));
+					if ($info['t'] == 0) {
+						$fields = array(
+							'pid' => $GLOBALS['TSFE']->id,
+							'file_path_hash' => crc32($currentPathCopy),
+							'file_path' => $currentPathCopy,
+							'realurl_path_hash' => $newPathHash,
+							'realurl_path' => $newPathCopy
+						);
+						$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_filerealurl_cache', $fields);
+					}
 				}
 				$this->createdPaths[$newPath] = $currentPath;
 
@@ -266,6 +271,21 @@ class tx_filerealurl_fehook {
 			$result = 'application/' . $fileParts['extension'];
 		}
 		return $result;
+	}
+
+	/**
+	 * Obtains a path from the cache.
+	 *
+	 * @param	string	$currentPath	Current path (relative!)
+	 * @return	string	Found path or null
+	 */
+	protected function getFromCache($currentPath) {
+		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('realurl_path',
+			'tx_filerealurl_cache', 'pid=' . intval($GLOBALS['TSFE']->id) .
+			' AND file_path_hash=' . crc32($currentPath) .
+			' AND file_path=' .
+			$GLOBALS['TYPO3_DB']->fullQuoteStr($currentPath, 'tx_filerealurl_cache'));
+		return (is_array($row) ? $row['realurl_path'] : null);
 	}
 }
 
