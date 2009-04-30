@@ -53,6 +53,13 @@ class tx_filerealurl_fehook {
 	protected	$cObj;
 
 	/**
+	 * Created paths
+	 *
+	 * @var	array
+	 */
+	protected	$createdPaths = array();
+
+	/**
 	 * Hooks to TSFE and converts speaking paths to real paths. Outputs the file
 	 * if found.
 	 *
@@ -178,6 +185,7 @@ class tx_filerealurl_fehook {
 					);
 					$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_filerealurl_cache', $fields);
 				}
+				$this->createdPaths[$newPath] = $currentPath;
 
 				// Update the content
 				$content = substr($content, 0, $matches[$group][$i][1]) .
@@ -197,21 +205,29 @@ class tx_filerealurl_fehook {
 	 * @return	string	A new path
 	 */
 	protected function createNewPath($currentPath, array $config) {
+		// Create simple path
 		$fileParts = pathinfo($this->getPathOnly($currentPath));
 		if (strpos($currentPath, 'typo3temp/') !== false &&
 				preg_match('/(?:_|-)[a-f01-9]{6,10}$/i', $fileParts['filename'])) {
-			// This is a file from typo3temp/ and it has a hash already
-			$this->cObj->setCurrentVal(sprintf('%s.%s', $fileParts['filename'],
-				$fileParts['extension']));
+			// This is a file from typo3temp/ and it has a hash. Get rid of it
+			$fileParts['filename'] = preg_replace('/^(.*)_[a-f01-9]+$/i', '\1', $fileParts['filename']);
 		}
-		else {
+		$filename = sprintf('%s.%s', $fileParts['filename'], $fileParts['extension']);
+		$this->cObj->setCurrentVal($filename);
+		$newPath = $this->cObj->cObjGetSingle($config['path'], $config['path.']);
+
+		// If this file name was used already, we have to make it unique
+		$num = 1;
+		while (isset($this->createdPaths[$newPath]) && $this->createdPaths[$newPath] != $currentPath) {
 			// Need to hash this one
 			$replacementChar = ($this->config['config']['simulateStaticDocuments_replacementChar'] ?
 				$this->config['config']['simulateStaticDocuments_replacementChar'] : '_');
+
 			$this->cObj->setCurrentVal(sprintf('%s%s%x.%s', $fileParts['filename'],
-				$replacementChar, crc32($currentPath), $fileParts['extension']));
+				$replacementChar, $num++, $fileParts['extension']));
+
+			$newPath = $this->cObj->cObjGetSingle($config['path'], $config['path.']);
 		}
-		$newPath = $this->cObj->cObjGetSingle($config['path'], $config['path.']);
 		return $newPath;
 	}
 

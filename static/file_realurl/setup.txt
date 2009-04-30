@@ -28,6 +28,6 @@ tx_filerealurl {
 		}
 
 		20 < .10
-		20.match = /href="([^"]+\.(?:doc|xls|pdf))"/i
+		20.match = /href="([^"]*(?:typo3temp|uploads|fileadmin)[^"]+\.(?:doc|xls|pdf))"/i
 	}
 }
