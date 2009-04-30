@@ -60,8 +60,8 @@ class tx_filerealurl_typolinkhook {
 			$suffix = (t3lib_div::testInt($realurl->extConf['fileName']['defaultToHTMLsuffixOnPrev']) ?
 				'.html' : $realurl->extConf['fileName']['defaultToHTMLsuffixOnPrev']);
 			$this->cObj->lastTypoLinkUrl = $finalTagParts['url'] = substr($finalTagParts['url'], 0, -strlen($suffix)) . '/';
-			$finalTagParts['TAG'] = '<a href="' . $finalTagParts['url'] .'"' .
-				$finalTagParts['targetParams'] .
+			$finalTagParts['TAG'] = '<a href="' . $finalTagParts['url'] .'" ' .
+				$finalTagParts['targetParams'] . ' ' .
 				$finalTagParts['aTagParams'] . '>';
 		}
 		return $finalTagParts['TAG'];
